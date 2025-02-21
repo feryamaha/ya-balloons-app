@@ -1,2 +1,0 @@
-.balloon{cursor:pointer;position:absolute;transition:opacity .5s ease-out,transform .5s ease-out}.balloon.popped{opacity:0;transform:scale(1.5)}#score{background-color:#000;border-radius:5px;color:#fff;font-size:24px;left:10px;padding:5px 10px;position:fixed;top:10px;z-index:1000}.bubble-particle{background-size:cover;border-radius:50%;box-shadow:0 0 30px #fff,inset 0 0 15px #fffc;position:absolute;z-index:999}body{background:#ffe6f0;font-family:Arial,sans-serif;height:100vh;margin:0;overflow:hidden}
-/*# sourceMappingURL=main.9eccc8e0.css.map*/
