@@ -1,7 +1,24 @@
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #ffe6f0;
+  font-family: Arial, sans-serif;
+  height: 100vh;
+  width: 100vw;
+}
+
+.game-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
 .balloon {
   position: absolute;
   cursor: pointer;
   transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3), 0 0 20px rgba(255, 255, 255, 0.5);
 }
 
 .balloon.popped {
@@ -9,10 +26,18 @@
   transform: scale(1.5);
 }
 
+.balloon-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
 #score {
   position: fixed;
   top: 10px;
-  left: 10px;
+  left: 50%;
+  transform: translateX(-50%);
   font-size: 24px;
   color: #ffffff;
   background-color: #000000;
@@ -25,7 +50,64 @@
   position: absolute;
   border-radius: 50%;
   box-shadow: 0 0 30px rgba(255, 255, 255, 1),
-    inset 0 0 15px rgba(255, 255, 255, 0.8); /* Brilho 3x mais forte */
+    inset 0 0 15px rgba(255, 255, 255, 0.8);
   background-size: cover;
   z-index: 999;
+}
+
+.record-menu {
+  position: fixed;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  background-color: rgba(0, 0, 0, 0.8);
+  padding: 10px;
+  border-radius: 5px;
+  z-index: 1000;
+}
+
+.record-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.record-image {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+}
+
+.record-item span {
+  color: #ffffff;
+  font-size: 18px;
+}
+
+/* Responsividade para tablets (768px) e celulares */
+@media (max-width: 768px) {
+  .balloon {
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3), 0 0 10px rgba(255, 255, 255, 0.5); /* Efeito 3D menor em móveis */
+  }
+
+  #score {
+    font-size: 18px;
+    padding: 3px 8px;
+  }
+
+  .record-menu {
+    bottom: 5px;
+    padding: 5px;
+    gap: 5px;
+  }
+
+  .record-image {
+    width: 24px;
+    height: 24px;
+  }
+
+  .record-item span {
+    font-size: 14px;
+  }
 }

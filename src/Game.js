@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import './Game.css';
 
+const familyImages = [
+    'fernando',
+    'esposa',
+    'anthonella',
+    'yasmim',
+    'akita',
+    'husky'
+];
+
 const shapes = [
-    { name: 'circle', style: { borderRadius: '50%', clipPath: null } },
-    { name: 'square', style: { borderRadius: '0', clipPath: null } },
-    { name: 'triangle', style: { clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', borderRadius: '0' } },
-    { name: 'diamond', style: { clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)', borderRadius: '0' } },
-    { name: 'pentagon', style: { clipPath: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)', borderRadius: '0' } }
+    { name: 'circle', style: { borderRadius: '50%', clipPath: null } }
 ];
 
 function getRandomColor() {
@@ -16,11 +21,18 @@ function getRandomColor() {
 
 function getRandomChromaticColor() {
     const hue = Math.floor(Math.random() * 360);
-    return `hsl(${hue}, 100%, 70%)`; // Brilho aumentado de 60% pra 70% pra cores mais vivas
+    return `hsl(${hue}, 100%, 70%)`;
 }
 
 function getRandomShape() {
-    return shapes[Math.floor(Math.random() * shapes.length)];
+    return shapes[0];
+}
+
+function getRandomImage() {
+    const baseName = familyImages[Math.floor(Math.random() * familyImages.length)];
+    const fullPath = `${process.env.PUBLIC_URL}/assets/images/${baseName}.webp`;
+    console.log('Tentando carregar imagem primária:', fullPath);
+    return fullPath;
 }
 
 let audioContext = null;
@@ -44,7 +56,7 @@ async function initializeAudio() {
     if (!plockBuffer) {
         console.log('Tentando carregar áudio de: /assets/sounds/pop.mp3');
         try {
-            const response = await fetch('/assets/sounds/pop.mp3');
+            const response = await fetch(`${process.env.PUBLIC_URL}/assets/sounds/pop.mp3`);
             if (!response.ok) {
                 throw new Error(`Erro HTTP: ${response.status} - ${response.statusText}`);
             }
@@ -67,23 +79,66 @@ function Game() {
     const [balloons, setBalloons] = useState([]);
     const [score, setScore] = useState(0);
     const [audioLoaded, setAudioLoaded] = useState(false);
+    const [records, setRecords] = useState({
+        '/assets/images/fernando.webp': 0,
+        '/assets/images/esposa.webp': 0,
+        '/assets/images/anthonella.webp': 0,
+        '/assets/images/yasmim.webp': 0,
+        '/assets/images/akita.webp': 0,
+        '/assets/images/husky.webp': 0
+    });
 
     useEffect(() => {
-        const initialBalloons = Array.from({ length: 5 }, createBalloonData);
+        const initialBalloons = Array.from({ length: 2 }, () => createBalloonData());
         setBalloons(initialBalloons);
 
         const animationInterval = setInterval(() => {
             setBalloons(prev => {
-                const updatedBalloons = prev.map(balloon => ({
-                    ...balloon,
-                    y: balloon.y - 3
-                })).filter(balloon => balloon.y > -balloon.size);
-                if (updatedBalloons.length < 5) {
-                    return [...updatedBalloons, createBalloonData()];
+                const updatedBalloons = prev.map(balloon => {
+                    const speedY = Math.random() * 3 + 2; // Aumentado para 2-5px por frame
+                    let speedX = (Math.random() * 2 - 1) * 0.5;
+
+                    let newX = balloon.x + speedX;
+                    let newY = balloon.y - speedY;
+
+                    prev.forEach(otherBalloon => {
+                        if (otherBalloon.id !== balloon.id && !otherBalloon.popped) {
+                            const dx = newX + balloon.size / 2 - (otherBalloon.x + otherBalloon.size / 2);
+                            const dy = newY + balloon.size / 2 - (otherBalloon.y + otherBalloon.size / 2);
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+                            const minDistance = balloon.size;
+
+                            if (distance < minDistance) {
+                                const angle = Math.atan2(dy, dx);
+                                const overlap = minDistance - distance;
+                                const pushForce = 1.5;
+                                newX -= Math.cos(angle) * overlap * pushForce;
+                                newY -= Math.sin(angle) * overlap * pushForce * 0.1;
+                                otherBalloon.x += Math.cos(angle) * overlap * pushForce;
+                                otherBalloon.y += Math.sin(angle) * overlap * pushForce * 0.1;
+
+                                speedX += (Math.random() * 0.8 - 0.4) * pushForce;
+                            }
+                        }
+                    });
+
+                    newX = Math.max(0, Math.min(newX, window.innerWidth - balloon.size));
+                    newY = Math.max(-balloon.size, newY);
+
+                    return {
+                        ...balloon,
+                        x: newX,
+                        y: newY
+                    };
+                }).filter(balloon => balloon.y > -balloon.size);
+
+                if (updatedBalloons.length < 12 && Math.random() < 0.1) { // Aumentado limite para 12 e probabilidade para 10%
+                    const newBalloon = createBalloonData();
+                    return [...updatedBalloons, newBalloon];
                 }
                 return updatedBalloons;
             });
-        }, 50);
+        }, 100);
 
         return () => {
             clearInterval(animationInterval);
@@ -98,11 +153,12 @@ function Game() {
     };
 
     function createBalloonData() {
-        const size = Math.random() * 60 + 60; // 60-120px
+        const size = 48;
         return {
             id: Date.now() + Math.random(),
             shape: getRandomShape(),
             color: getRandomColor(),
+            image: getRandomImage(),
             x: Math.random() * (window.innerWidth - size),
             y: window.innerHeight,
             size,
@@ -137,8 +193,8 @@ function Game() {
             particle.style.top = `${y + offsetY}px`;
             particle.style.width = `${size}px`;
             particle.style.height = `${size}px`;
-            particle.style.background = `radial-gradient(circle, ${getRandomChromaticColor()} 30%, transparent 80%)`; // Gradiente mais forte
-            particle.style.opacity = '1'; // Opacidade máxima pra mais força
+            particle.style.background = `radial-gradient(circle, ${getRandomChromaticColor()} 30%, transparent 80%)`;
+            particle.style.opacity = '1';
             document.body.appendChild(particle);
 
             setTimeout(() => {
@@ -164,7 +220,7 @@ function Game() {
                     subParticle.style.width = `${subSize}px`;
                     subParticle.style.height = `${subSize}px`;
                     subParticle.style.background = `radial-gradient(circle, ${getRandomChromaticColor()} 30%, transparent 80%)`;
-                    subParticle.style.opacity = '1'; // Opacidade máxima
+                    subParticle.style.opacity = '1';
                     document.body.appendChild(subParticle);
 
                     setTimeout(() => {
@@ -189,7 +245,20 @@ function Game() {
             );
             createBubbleParticles(balloon.x + balloon.size / 2, balloon.y + balloon.size / 2);
             playPlockSound();
-            setScore(prev => prev + 1);
+            console.log('Score antes:', score);
+            setScore(prev => {
+                const newScore = Number(prev) + 1 || 0;
+                console.log('Score depois:', newScore);
+                return newScore;
+            });
+            setRecords(prev => {
+                const key = balloon.image.replace(`${process.env.PUBLIC_URL}`, '');
+                console.log('Atualizando record para:', key);
+                return {
+                    ...prev,
+                    [key]: (prev[key] || 0) + 1
+                };
+            });
 
             setTimeout(() => {
                 setBalloons(prev => prev.filter(b => b.id !== id));
@@ -200,30 +269,81 @@ function Game() {
     return (
         <>
             <div id="score">Balões Estourados: {score}</div>
-            {balloons.map(balloon => (
-                <div
-                    key={balloon.id}
-                    className={`balloon ${balloon.popped ? 'popped' : ''}`}
-                    style={{
-                        left: `${balloon.x}px`,
-                        top: `${balloon.y}px`,
-                        width: `${balloon.size}px`,
-                        height: `${balloon.size}px`,
-                        backgroundColor: balloon.color,
-                        borderRadius: balloon.shape.style.borderRadius || '0',
-                        clipPath: balloon.shape.style.clipPath || null
-                    }}
-                    onClick={async () => {
-                        await handleInteraction();
-                        popBalloon(balloon.id, balloon.color);
-                    }}
-                    onTouchStart={async (e) => {
-                        e.preventDefault();
-                        await handleInteraction();
-                        popBalloon(balloon.id, balloon.color);
-                    }}
-                />
-            ))}
+            <div className="game-container">
+                {balloons.map(balloon => (
+                    <div
+                        key={balloon.id}
+                        className={`balloon ${balloon.popped ? 'popped' : ''}`}
+                        style={{
+                            left: `${balloon.x}px`,
+                            top: `${balloon.y}px`,
+                            width: `${balloon.size}px`,
+                            height: `${balloon.size}px`,
+                            border: `5px solid ${balloon.color}`,
+                            borderRadius: '50%',
+                            clipPath: null
+                        }}
+                        onClick={async () => {
+                            await handleInteraction();
+                            popBalloon(balloon.id, balloon.color);
+                        }}
+                        onTouchStart={async (e) => {
+                            e.preventDefault();
+                            await handleInteraction();
+                            popBalloon(balloon.id, balloon.color);
+                        }}
+                    >
+                        <img
+                            src={balloon.image}
+                            alt="Balloon"
+                            className="balloon-image"
+                            onError={(e) => {
+                                console.error(`Falha ao carregar imagem primária .webp: ${e.target.src}`);
+                                const baseName = e.target.src.split('/').pop().replace('.webp', '');
+                                const svgPath = `${process.env.PUBLIC_URL}/assets/images/${baseName}.svg`;
+                                const pngPath = `${process.env.PUBLIC_URL}/assets/images/${baseName}.png`;
+                                e.target.src = svgPath;
+                                e.target.onerror = () => {
+                                    console.error(`Falha ao carregar imagem .svg: ${svgPath}`);
+                                    e.target.src = pngPath;
+                                    e.target.onerror = () => {
+                                        console.error(`Falha ao carregar imagem .png: ${pngPath}`);
+                                        e.target.src = `${process.env.PUBLIC_URL}/assets/images/default.png`;
+                                    };
+                                };
+                            }}
+                            onLoad={() => console.log(`Imagem carregada: ${balloon.image}`)}
+                        />
+                    </div>
+                ))}
+            </div>
+            <div className="record-menu">
+                {Object.entries(records).map(([image, count]) => (
+                    <div key={image} className="record-item">
+                        <img
+                            src={`${process.env.PUBLIC_URL}${image}`}
+                            alt="Record"
+                            className="record-image"
+                            onError={(e) => {
+                                console.error(`Falha ao carregar recorde .webp: ${e.target.src}`);
+                                const baseName = e.target.src.split('/').pop().replace('.webp', '');
+                                const svgPath = `${process.env.PUBLIC_URL}/assets/images/${baseName}.svg`;
+                                const pngPath = `${process.env.PUBLIC_URL}/assets/images/${baseName}.png`;
+                                e.target.src = svgPath;
+                                e.target.onerror = () => {
+                                    console.error(`Falha ao carregar recorde .svg: ${svgPath}`);
+                                    e.target.src = pngPath;
+                                    e.target.onerror = () => {
+                                        console.error(`Falha ao carregar recorde .png: ${pngPath}`);
+                                        e.target.src = `${process.env.PUBLIC_URL}/assets/images/default.png`;
+                                    };
+                                };
+                            }}
+                        />
+                        <span>{count}</span>
+                    </div>
+                ))}
+            </div>
         </>
     );
 }
