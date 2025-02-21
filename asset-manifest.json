@@ -1,13 +1,13 @@
 {
   "files": {
-    "main.css": "/ya-balloons-app/static/css/main.9babfb19.css",
-    "main.js": "/ya-balloons-app/static/js/main.c3fd431e.js",
+    "main.css": "/ya-balloons-app/static/css/main.7888ec0c.css",
+    "main.js": "/ya-balloons-app/static/js/main.35b0c378.js",
     "index.html": "/ya-balloons-app/index.html",
-    "main.9babfb19.css.map": "/ya-balloons-app/static/css/main.9babfb19.css.map",
-    "main.c3fd431e.js.map": "/ya-balloons-app/static/js/main.c3fd431e.js.map"
+    "main.7888ec0c.css.map": "/ya-balloons-app/static/css/main.7888ec0c.css.map",
+    "main.35b0c378.js.map": "/ya-balloons-app/static/js/main.35b0c378.js.map"
   },
   "entrypoints": [
-    "static/css/main.9babfb19.css",
-    "static/js/main.c3fd431e.js"
+    "static/css/main.7888ec0c.css",
+    "static/js/main.35b0c378.js"
   ]
 }
