@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/ya-balloons-app/static/css/main.d9f9d2f8.css",
+    "main.js": "/ya-balloons-app/static/js/main.f53b6a4c.js",
+    "index.html": "/ya-balloons-app/index.html",
+    "main.d9f9d2f8.css.map": "/ya-balloons-app/static/css/main.d9f9d2f8.css.map",
+    "main.f53b6a4c.js.map": "/ya-balloons-app/static/js/main.f53b6a4c.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.d9f9d2f8.css",
+    "static/js/main.f53b6a4c.js"
+  ]
+}
