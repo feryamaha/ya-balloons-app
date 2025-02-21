@@ -14,6 +14,11 @@ function getRandomColor() {
     return colors[Math.floor(Math.random() * colors.length)];
 }
 
+function getRandomChromaticColor() {
+    const hue = Math.floor(Math.random() * 360);
+    return `hsl(${hue}, 100%, 70%)`; // Brilho aumentado de 60% pra 70% pra cores mais vivas
+}
+
 function getRandomShape() {
     return shapes[Math.floor(Math.random() * shapes.length)];
 }
@@ -31,76 +36,165 @@ async function fetchComplementaryColor(hex) {
     }
 }
 
+async function initializeAudio() {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        console.log('AudioContext criado');
+    }
+    if (!plockBuffer) {
+        console.log('Tentando carregar áudio de: /assets/sounds/pop.mp3');
+        try {
+            const response = await fetch('/assets/sounds/pop.mp3');
+            if (!response.ok) {
+                throw new Error(`Erro HTTP: ${response.status} - ${response.statusText}`);
+            }
+            const contentType = response.headers.get('Content-Type');
+            console.log('Tipo de conteúdo recebido:', contentType);
+            if (!contentType || !contentType.includes('audio/')) {
+                throw new Error('O servidor retornou algo que não é áudio');
+            }
+            const arrayBuffer = await response.arrayBuffer();
+            console.log('ArrayBuffer recebido, decodificando...');
+            plockBuffer = await audioContext.decodeAudioData(arrayBuffer);
+            console.log('Áudio carregado com sucesso');
+        } catch (error) {
+            console.error('Falha ao carregar pop.mp3:', error);
+        }
+    }
+}
+
 function Game() {
     const [balloons, setBalloons] = useState([]);
     const [score, setScore] = useState(0);
+    const [audioLoaded, setAudioLoaded] = useState(false);
 
     useEffect(() => {
-        async function initAudio() {
-            if (!audioContext) {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const response = await fetch('/assets/sounds/plock.m4a');
-                const arrayBuffer = await response.arrayBuffer();
-                plockBuffer = await audioContext.decodeAudioData(arrayBuffer);
-                console.log('Áudio carregado');
-            }
-        }
-
-        const handleInteraction = () => {
-            initAudio();
-            document.removeEventListener('click', handleInteraction);
-            document.removeEventListener('touchstart', handleInteraction);
-        };
-
-        document.addEventListener('click', handleInteraction);
-        document.addEventListener('touchstart', handleInteraction);
-
         const initialBalloons = Array.from({ length: 5 }, createBalloonData);
         setBalloons(initialBalloons);
 
+        const animationInterval = setInterval(() => {
+            setBalloons(prev => {
+                const updatedBalloons = prev.map(balloon => ({
+                    ...balloon,
+                    y: balloon.y - 3
+                })).filter(balloon => balloon.y > -balloon.size);
+                if (updatedBalloons.length < 5) {
+                    return [...updatedBalloons, createBalloonData()];
+                }
+                return updatedBalloons;
+            });
+        }, 50);
+
         return () => {
-            document.removeEventListener('click', handleInteraction);
-            document.removeEventListener('touchstart', handleInteraction);
+            clearInterval(animationInterval);
         };
     }, []);
 
+    const handleInteraction = async () => {
+        if (!audioLoaded) {
+            await initializeAudio();
+            setAudioLoaded(true);
+        }
+    };
+
     function createBalloonData() {
-        const size = Math.random() * 50 + 50;
+        const size = Math.random() * 60 + 60; // 60-120px
         return {
             id: Date.now() + Math.random(),
             shape: getRandomShape(),
             color: getRandomColor(),
             x: Math.random() * (window.innerWidth - size),
-            y: Math.random() * (window.innerHeight - size),
+            y: window.innerHeight,
             size,
             popped: false
         };
     }
 
     function playPlockSound() {
-        if (!audioContext || !plockBuffer) return;
+        if (!audioContext || !plockBuffer) {
+            console.warn('Áudio não reproduzido: contexto ou buffer não pronto');
+            return;
+        }
         const source = audioContext.createBufferSource();
         source.buffer = plockBuffer;
         source.connect(audioContext.destination);
         source.start(0);
+        console.log('Som "pop" reproduzido');
     }
 
-    async function popBalloon(id, initialColor) {
-        const newColor = await fetchComplementaryColor(initialColor);
-        setBalloons(prev =>
-            prev.map(b =>
-                b.id === id ? { ...b, color: newColor, popped: true } : b
-            )
-        );
-        playPlockSound();
-        setScore(prev => prev + 1);
+    const createBubbleParticles = (x, y) => {
+        const particleCount = 8;
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'bubble-particle';
+            const size = Math.random() * 80 + 40;
+            const angle = Math.random() * 2 * Math.PI;
+            const distance = Math.random() * 120 + 40;
+            const offsetX = Math.cos(angle) * distance;
+            const offsetY = Math.sin(angle) * distance;
 
-        setTimeout(() => {
-            setBalloons(prev => {
-                const newBalloons = prev.filter(b => b.id !== id);
-                return [...newBalloons, createBalloonData()];
-            });
-        }, 500);
+            particle.style.left = `${x + offsetX}px`;
+            particle.style.top = `${y + offsetY}px`;
+            particle.style.width = `${size}px`;
+            particle.style.height = `${size}px`;
+            particle.style.background = `radial-gradient(circle, ${getRandomChromaticColor()} 30%, transparent 80%)`; // Gradiente mais forte
+            particle.style.opacity = '1'; // Opacidade máxima pra mais força
+            document.body.appendChild(particle);
+
+            setTimeout(() => {
+                particle.style.transition = 'all 2.5s ease-out';
+                particle.style.opacity = '0';
+                particle.style.transform = `translate(${offsetX * 0.7}px, ${offsetY * 0.7 - 40}px) scale(0.5)`;
+                setTimeout(() => particle.remove(), 2500);
+            }, 50);
+
+            setTimeout(() => {
+                const subParticleCount = 3;
+                for (let j = 0; j < subParticleCount; j++) {
+                    const subParticle = document.createElement('div');
+                    subParticle.className = 'bubble-particle';
+                    const subSize = size * 0.5;
+                    const subAngle = Math.random() * 2 * Math.PI;
+                    const subDistance = Math.random() * 40 + 20;
+                    const subOffsetX = Math.cos(subAngle) * subDistance;
+                    const subOffsetY = Math.sin(subAngle) * subDistance;
+
+                    subParticle.style.left = `${x + offsetX}px`;
+                    subParticle.style.top = `${y + offsetY}px`;
+                    subParticle.style.width = `${subSize}px`;
+                    subParticle.style.height = `${subSize}px`;
+                    subParticle.style.background = `radial-gradient(circle, ${getRandomChromaticColor()} 30%, transparent 80%)`;
+                    subParticle.style.opacity = '1'; // Opacidade máxima
+                    document.body.appendChild(subParticle);
+
+                    setTimeout(() => {
+                        subParticle.style.transition = 'all 1.8s ease-out';
+                        subParticle.style.opacity = '0';
+                        subParticle.style.transform = `translate(${subOffsetX}px, ${subOffsetY - 25}px) scale(0.3)`;
+                        setTimeout(() => subParticle.remove(), 1800);
+                    }, 50);
+                }
+            }, 300);
+        }
+    };
+
+    async function popBalloon(id, initialColor) {
+        const balloon = balloons.find(b => b.id === id);
+        if (balloon) {
+            const newColor = await fetchComplementaryColor(initialColor);
+            setBalloons(prev =>
+                prev.map(b =>
+                    b.id === id ? { ...b, color: newColor, popped: true } : b
+                )
+            );
+            createBubbleParticles(balloon.x + balloon.size / 2, balloon.y + balloon.size / 2);
+            playPlockSound();
+            setScore(prev => prev + 1);
+
+            setTimeout(() => {
+                setBalloons(prev => prev.filter(b => b.id !== id));
+            }, 500);
+        }
     }
 
     return (
@@ -119,9 +213,13 @@ function Game() {
                         borderRadius: balloon.shape.style.borderRadius || '0',
                         clipPath: balloon.shape.style.clipPath || null
                     }}
-                    onClick={() => popBalloon(balloon.id, balloon.color)}
-                    onTouchStart={(e) => {
+                    onClick={async () => {
+                        await handleInteraction();
+                        popBalloon(balloon.id, balloon.color);
+                    }}
+                    onTouchStart={async (e) => {
                         e.preventDefault();
+                        await handleInteraction();
                         popBalloon(balloon.id, balloon.color);
                     }}
                 />

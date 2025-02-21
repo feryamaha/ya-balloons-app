@@ -14,6 +14,18 @@
   top: 10px;
   left: 10px;
   font-size: 24px;
-  color: #ff69b4;
+  color: #ffffff;
+  background-color: #000000;
+  padding: 5px 10px;
+  border-radius: 5px;
   z-index: 1000;
+}
+
+.bubble-particle {
+  position: absolute;
+  border-radius: 50%;
+  box-shadow: 0 0 30px rgba(255, 255, 255, 1),
+    inset 0 0 15px rgba(255, 255, 255, 0.8); /* Brilho 3x mais forte */
+  background-size: cover;
+  z-index: 999;
 }
