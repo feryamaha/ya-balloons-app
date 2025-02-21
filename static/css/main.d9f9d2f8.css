@@ -1,2 +1,0 @@
-.balloon{cursor:pointer;position:absolute;transition:opacity .5s ease-out,transform .5s ease-out}.balloon.popped{opacity:0;transform:scale(1.5)}#score{color:#ff69b4;font-size:24px;left:10px;position:fixed;top:10px;z-index:1000}body{background:#ffe6f0;font-family:Arial,sans-serif;height:100vh;margin:0;overflow:hidden}
-/*# sourceMappingURL=main.d9f9d2f8.css.map*/
