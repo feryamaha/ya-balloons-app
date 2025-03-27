@@ -1,6 +1,6 @@
 # YA Ballons.App
 
-Um jogo simples em React onde você estoura balões coloridos com imagens da família. Ganhe pontos e acompanhe os recordes por imagem!
+Um jogo simples em React de estoura balões coloridos com imagens da família. Ganhe pontos e acompanhe os recordes por imagem!
 Tive a inspiração em criar algo para as minhas filhas, algo que ja existe mais foi tudo pensado em nossa realidade e utilizando tecnologias para fixação de aprendizado de react.
 
 https://feryamaha.github.io/ya-balloons-app/
